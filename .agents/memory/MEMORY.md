@@ -1,0 +1,1 @@
+- [Next.js routing behind the preview proxy](nextjs-preview-routing.md) — reserve only the shared API health path so Next `/api/*` routes reach the app; explicitly route `/_next/hmr`.
