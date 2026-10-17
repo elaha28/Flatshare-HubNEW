@@ -2,6 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Bell, CheckSquare, FileText, Home, Loader2, Upload } from "lucide-react";
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set the worker to a CDN to avoid Next.js local worker errors
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
 const roommates = [
   { name: "Sarah", initials: "SA" },
@@ -20,10 +24,6 @@ const tabs = [
   { id: "docs", label: "Docs", Icon: FileText },
   { id: "chores", label: "Chores", Icon: CheckSquare },
 ];
-
-function initials(name) {
-  return name.slice(0, 2).toUpperCase();
-}
 
 async function getApiError(response, fallback) {
   let payload;
@@ -56,6 +56,7 @@ export default function Hub() {
     { id: "kitchen", name: "Wipe down kitchen", assignee: "Sarah", due: "Thu, 23 May", done: true },
   ]);
   const [documentText, setDocumentText] = useState("");
+  const [fileName, setFileName] = useState(""); // New state for file name
   const [language, setLanguage] = useState("Spanish");
   const [summary, setSummary] = useState("");
   const [translation, setTranslation] = useState("");
@@ -83,6 +84,38 @@ export default function Hub() {
 
   function toggleChore(id) {
     setChores((current) => current.map((chore) => chore.id === id ? { ...chore, done: !chore.done } : chore));
+  }
+
+  // NEW: PDF Upload Handler
+  async function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    setFileName(file.name);
+    setAnalyzeError("");
+    setDocumentText(""); 
+
+    if (file.type === "application/pdf") {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item) => item.str).join(" ");
+          fullText += pageText + "\n";
+        }
+        setDocumentText(fullText);
+      } catch (error) {
+        console.error("Error reading PDF:", error);
+        setAnalyzeError("Failed to read the PDF. Please try pasting the text instead.");
+      }
+    } else {
+      // For .txt files
+      const text = await file.text();
+      setDocumentText(text);
+    }
   }
 
   async function analyzeDocument() {
@@ -301,8 +334,21 @@ export default function Hub() {
                 </div>
                 <form className="docs-form" onSubmit={(event) => { event.preventDefault(); analyzeDocument(); }}>
                   <p className="docs-intro">Paste a letter, tenancy clause, or household notice. We’ll give you a clear summary and translate it for your housemate.</p>
+                  
+                  {/* NEW: FILE UPLOAD UI */}
+                  <div style={{ marginBottom: "20px", padding: "15px", background: "#f9fbf8", border: "1px dashed #c3d9b9", borderRadius: "8px" }}>
+                    <label className="field-label" style={{ display: "block", marginBottom: "8px" }}>Upload a Document (PDF or TXT)</label>
+                    <input 
+                      type="file" 
+                      accept=".pdf,.txt" 
+                      onChange={handleFileUpload} 
+                      style={{ display: "block", width: "100%", fontSize: "14px" }}
+                    />
+                    {fileName && <p style={{ fontSize: "13px", color: "#4a7c3f", marginTop: "8px", fontWeight: "bold" }}>✅ Loaded: {fileName}</p>}
+                  </div>
+
                   <div>
-                    <label className="field-label" htmlFor="document-text">Document text</label>
+                    <label className="field-label" htmlFor="document-text">Or paste text manually</label>
                     <textarea id="document-text" className="document-text" value={documentText} onChange={(event) => { setDocumentText(event.target.value); setAnalyzeError(""); }} placeholder="Paste the text you want help understanding…" maxLength={12000} />
                     <div className="count-label" style={{ textAlign: "right", marginTop: 5 }}>{documentText.length.toLocaleString()} / 12,000</div>
                   </div>

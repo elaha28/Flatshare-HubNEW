@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(req) {
+  const startTime = Date.now(); // Start timer for the pitch
+  
   try {
     const { text, language } = await req.json();
     const apiKey = process.env.GEMINI_API_KEY;
 
     const prompt = `You are a helpful assistant for university students. Read the following document.
-    1. Provide a plain English summary of the key points (keep it to 1-2 short sentences).
-    2. Translate the FULL document into ${language}.
+    1. Provide a short, bulleted summary of the key actionable information (e.g., what the person needs to submit, deadlines, amounts, rules) written entirely in the ${language} language. Put this in the "summary" key.
+    2. Translate the FULL document into ${language}. Put this in the "translation" key.
     Format your response as a valid JSON object with exactly two keys: "summary" and "translation". Do not wrap it in markdown blockquotes.
 
     Document Text: ${text}`;
@@ -24,6 +26,10 @@ export async function POST(req) {
         response_format: {
           type: "text",
           mime_type: "application/json"
+        },
+        generation_config: {
+          thinking_level: "low",
+          max_output_tokens: 1024
         }
       })
     });
@@ -57,6 +63,9 @@ export async function POST(req) {
 
     const cleanJson = modelText.replace(/```json/g, '').replace(/```/g, '').trim();
     const parsedData = JSON.parse(cleanJson);
+
+    const timeTaken = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`✅ Gemini analyzed the document in ${timeTaken} seconds!`);
 
     return NextResponse.json(parsedData);
   } catch (error) {
