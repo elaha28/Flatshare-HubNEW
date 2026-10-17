@@ -1,5 +1,5 @@
 const GEMINI_ENDPOINT =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
 const MAX_TEXT_LENGTH = 20_000;
 const SUPPORTED_LANGUAGES = new Set([
   "Spanish",
@@ -56,15 +56,23 @@ export async function POST(request) {
           generationConfig: {
             responseMimeType: "application/json",
             temperature: 0.2,
+            thinkingConfig: { thinkingLevel: "low" },
           },
         }),
-        signal: AbortSignal.timeout(45_000),
+        signal: AbortSignal.timeout(60_000),
       },
     );
 
     if (!upstream.ok) {
+      const messageByStatus = {
+        401: "Gemini rejected the API key. Check that it is valid and has Gemini API access.",
+        403: "Gemini denied this request. Check the API key permissions and project access.",
+        404: "The Gemini model endpoint was not found. Check the configured model name.",
+        429: "The Gemini API quota or rate limit was reached. Please try again later.",
+      };
       return jsonError(
-        `Gemini could not analyze this document (HTTP ${upstream.status}). Check the API key and try again.`,
+        messageByStatus[upstream.status] ??
+          `Gemini could not analyze this document (HTTP ${upstream.status}). Please try again.`,
         502,
       );
     }
