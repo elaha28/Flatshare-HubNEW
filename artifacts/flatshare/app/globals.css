@@ -75,6 +75,11 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-
 .sidebar-knudge { width:29px; height:29px; display:grid; place-items:center; flex:0 0 auto; border:1px solid rgba(220,238,210,.17); border-radius:8px; color:#c7d8be; background:rgba(255,255,255,.055); transition:background .18s ease, color .18s ease, transform .18s ease; }
 .sidebar-knudge:hover { transform:translateY(-1px); color:var(--forest); background:var(--lime); }
 .sidebar-knudge svg { width:14px; height:14px; }
+.sidebar-knudge:disabled { opacity:.55; cursor:wait; }
+.sidebar-nudge-status { margin:8px 0 0; font-size:11px; line-height:1.4; }
+.sidebar-nudge-status.sent { color:#c7d8be; }
+.sidebar-nudge-status.error { color:#ffb4a9; }
+.sidebar-nudge-status.sending { color:#d0d8ca; }
 .side-bottom { margin-top: auto; padding: 16px 12px 3px; border-top: 1px solid rgba(255,255,255,.14); color: #a9b8a2; font-size: 12px; line-height: 1.55; }
 .house-status { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; color: #eff6ea; font-weight: 700; }
 .status-dot { width: 7px; height: 7px; background: var(--lime); border-radius: 50%; }
