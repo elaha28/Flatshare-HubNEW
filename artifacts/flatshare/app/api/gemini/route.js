@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(req) {
-  const startTime = Date.now(); // Start timer for the pitch
+  const startTime = Date.now();
   
   try {
     const { text, language } = await req.json();
     const apiKey = process.env.GEMINI_API_KEY;
 
     const prompt = `You are a helpful assistant for university students. Read the following document.
-    1. Provide a short, bulleted summary of the key actionable information (e.g., what the person needs to submit, deadlines, amounts, rules) written entirely in the ${language} language. Put this in the "summary" key.
+    1. Provide a short, bulleted summary of the key actionable information written entirely in the ${language} language. Put this in the "summary" key.
     2. Translate the FULL document into ${language}. Put this in the "translation" key.
-    Format your response as a valid JSON object with exactly two keys: "summary" and "translation". Do not wrap it in markdown blockquotes.
+       3. If the document contains a financial bill, extract it to the "extractedBill" key: {"name": "Title", "amount": 100.00, "dueDate": "YYYY-MM-DD"}. If a year is not explicitly stated in the document, assume the year is 2026. Otherwise, return null.
 
     Document Text: ${text}`;
 
@@ -21,7 +21,7 @@ export async function POST(req) {
         'x-goog-api-key': apiKey 
       },
       body: JSON.stringify({
-        model: "gemini-3.8-flash",
+        model: "gemini-3.1-flash-lite",
         input: prompt,
         response_format: {
           type: "text",
@@ -29,7 +29,7 @@ export async function POST(req) {
         },
         generation_config: {
           thinking_level: "low",
-          max_output_tokens: 1024
+          max_output_tokens: 1024 
         }
       })
     });
@@ -41,7 +41,6 @@ export async function POST(req) {
       return NextResponse.json({ error: data.error.message }, { status: 500 });
     }
 
-    // SMART EXTRACTION: Search all steps to find the text block
     let modelText = "";
     if (data.steps && Array.isArray(data.steps)) {
       for (const step of data.steps) {
@@ -49,7 +48,7 @@ export async function POST(req) {
           for (const block of step.content) {
             if (block.text) {
               modelText = block.text;
-              break; // Found the text, stop searching
+              break;
             }
           }
         }

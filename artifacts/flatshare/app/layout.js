@@ -7,9 +7,9 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Flatshare | Max Ease",
+  title: "Pact | Max Ease",
   description:
-    "Shared bills and house admin, without the awkward chats. Keep your flat running smoothly with Flatshare.",
+    "Shared bills and house admin, without the awkward chats. Keep your flat running smoothly with Pact.",
 };
 
 export default function RootLayout({ children }) {
