@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bell, CheckSquare, FileText, Home, Loader2, Upload, Volume2 } from "lucide-react";
+import { Bell, CheckSquare, FileText, Home, Loader2, Upload } from "lucide-react";
 
 const roommates = [
   { name: "Sarah", initials: "SA" },
@@ -100,7 +100,7 @@ export default function Hub() {
       const response = await fetch("/api/gemini", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ documentText: text, targetLanguage: language }),
+        body: JSON.stringify({ text, language }),
         signal: controller.signal,
       });
       if (!response.ok) {
@@ -128,8 +128,8 @@ export default function Hub() {
     }
   }
 
-  async function listenToTranslation() {
-    if (!translation || audioLoading) return;
+  async function listenToSummary() {
+    if (!summary || audioLoading) return;
     audioRequest.current?.abort();
     const controller = new AbortController();
     audioRequest.current = controller;
@@ -143,7 +143,7 @@ export default function Hub() {
       const response = await fetch("/api/elevenlabs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: translation }),
+        body: JSON.stringify({ text: summary }),
         signal: controller.signal,
       });
       if (!response.ok) {
@@ -314,7 +314,7 @@ export default function Hub() {
                       </select>
                     </div>
                     <div>
-                  <button className="primary-action" type="submit" disabled={!documentText.trim() || isLoading}>
+                      <button className="primary-action" type="submit" disabled={!documentText.trim() || isLoading}>
                         {isLoading ? <Loader2 aria-hidden="true" /> : <Upload aria-hidden="true" />}
                         {isLoading ? "Analyzing…" : "Analyze"}
                       </button>
@@ -327,15 +327,21 @@ export default function Hub() {
                   <div className="result-card" aria-live="polite">
                     <div className="result-header"><FileText aria-hidden="true" /> Your document, made clearer</div>
                     <div className="result-columns">
-                      <div><div className="result-label">Plain-English summary</div><div className="result-text">{summary}</div></div>
-                      <div><div className="result-label">{language} translation</div><div className="result-text">{translation}</div></div>
+                      <div style={{ border: "1px solid #deead8", borderRadius: 10, padding: 14, background: "#ffffff" }}>
+                        <div className="result-label">Summary</div>
+                        <div className="result-text">{summary}</div>
+                        <button type="button" className="listen-button" onClick={listenToSummary} disabled={audioLoading || !summary}>
+                          {audioLoading && <Loader2 aria-hidden="true" />}
+                          {audioLoading ? "Preparing audio…" : "🔊 Listen to Summary"}
+                        </button>
+                        {audioError && <div className="error-box" role="alert" style={{ marginTop: 10 }}><span>{audioError}</span><button type="button" className="retry-button" onClick={listenToSummary} disabled={audioLoading}>Try again</button></div>}
+                        {audioUrl && <audio ref={audioRef} className="audio-player" controls src={audioUrl} aria-label="Summary audio" />}
+                      </div>
+                      <div style={{ border: "1px solid #deead8", borderRadius: 10, padding: 14, background: "#ffffff" }}>
+                        <div className="result-label">Full Translation · {language}</div>
+                        <div className="result-text">{translation}</div>
+                      </div>
                     </div>
-                    <button type="button" className="listen-button" onClick={listenToTranslation} disabled={audioLoading || !translation}>
-                      {audioLoading ? <Loader2 aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
-                      {audioLoading ? "Preparing audio…" : "Listen to Translation"}
-                    </button>
-                    {audioError && <div className="error-box" role="alert" style={{ marginTop: 10 }}><span>{audioError}</span><button type="button" className="retry-button" onClick={listenToTranslation} disabled={audioLoading}>Try again</button></div>}
-                    {audioUrl && <audio ref={audioRef} className="audio-player" controls src={audioUrl} aria-label="Translated document audio" />}
                   </div>
                 )}
               </div>

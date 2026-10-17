@@ -1,5 +1,7 @@
-const GEMINI_ENDPOINT =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
+const GEMINI_API =
+  "https://generativelanguage.googleapis.com/v1beta/models";
+// Try the requested model first; Google has retired it, so 404 falls back to the current Flash model.
+const GEMINI_MODELS = ["gemini-1.5-flash", "gemini-3.8-flash"];
 const MAX_TEXT_LENGTH = 20_000;
 const SUPPORTED_LANGUAGES = new Set([
   "Spanish",
@@ -21,20 +23,20 @@ export async function POST(request) {
     return jsonError("Request body must be valid JSON.", 400);
   }
 
-  const { documentText, targetLanguage } = body ?? {};
+  const { text, language } = body ?? {};
 
-  if (typeof documentText !== "string" || !documentText.trim()) {
+  if (typeof text !== "string" || !text.trim()) {
     return jsonError("Add document text before analyzing it.", 400);
   }
 
-  if (documentText.length > MAX_TEXT_LENGTH) {
+  if (text.length > MAX_TEXT_LENGTH) {
     return jsonError(
       `Document text must be ${MAX_TEXT_LENGTH.toLocaleString()} characters or fewer.`,
       413,
     );
   }
 
-  if (typeof targetLanguage !== "string" || !SUPPORTED_LANGUAGES.has(targetLanguage)) {
+  if (typeof language !== "string" || !SUPPORTED_LANGUAGES.has(language)) {
     return jsonError("Choose a supported translation language.", 400);
   }
 
@@ -43,25 +45,39 @@ export async function POST(request) {
     return jsonError("GEMINI_API_KEY is not configured on the server.", 503);
   }
 
-  const prompt = `You are a helpful assistant for university students. Read the following document. 1. Provide a plain English summary of the key points. 2. Translate that summary into ${targetLanguage}. Format your response as a valid JSON object with exactly two keys: 'summary' and 'translation'. Do not wrap it in markdown blockquotes.\n\n${documentText.trim()}`;
+  const prompt = `You are a helpful assistant for university students. Read the following document. Provide a short 1-2 sentence overview of the key points as "summary". Translate the full document into ${language} as "translation". Return a valid JSON object with exactly two keys: "summary" and "translation". No markdown.\n\n${text.trim()}`;
 
   try {
-    const upstream = await fetch(
-      `${GEMINI_ENDPOINT}?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            responseMimeType: "application/json",
-            temperature: 0.2,
-            thinkingConfig: { thinkingLevel: "low" },
-          },
-        }),
-        signal: AbortSignal.timeout(60_000),
-      },
-    );
+    let upstream;
+
+    for (const [index, model] of GEMINI_MODELS.entries()) {
+      const generationConfig = {
+        responseMimeType: "application/json",
+        temperature: 0.2,
+      };
+
+      if (model === "gemini-3.8-flash") {
+        generationConfig.thinkingConfig = { thinkingLevel: "low" };
+      }
+
+      upstream = await fetch(
+        `${GEMINI_API}/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig,
+          }),
+          signal: AbortSignal.timeout(60_000),
+        },
+      );
+
+      if (upstream.status === 404 && index < GEMINI_MODELS.length - 1) {
+        continue;
+      }
+      break;
+    }
 
     if (!upstream.ok) {
       const messageByStatus = {
@@ -99,7 +115,14 @@ export async function POST(request) {
         : jsonText,
     );
 
+    const responseKeys =
+      parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? Object.keys(parsed).sort()
+        : [];
     if (
+      responseKeys.length !== 2 ||
+      responseKeys[0] !== "summary" ||
+      responseKeys[1] !== "translation" ||
       typeof parsed.summary !== "string" ||
       typeof parsed.translation !== "string" ||
       !parsed.summary.trim() ||

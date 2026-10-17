@@ -32,6 +32,12 @@ export async function POST(request) {
   if (!apiKey || apiKey === "your_key_here") {
     return jsonError("ELEVENLABS_API_KEY is not configured on the server.", 503);
   }
+  if (!apiKey.startsWith("sk_")) {
+    return jsonError(
+      "ELEVENLABS_API_KEY must be the generated API secret, not the API key ID.",
+      503,
+    );
+  }
 
   try {
     const upstream = await fetch(ELEVENLABS_ENDPOINT, {
@@ -43,18 +49,27 @@ export async function POST(request) {
       },
       body: JSON.stringify({
         text: text.trim(),
-        model_id: "eleven_multilingual_v2",
+        model_id: "eleven_flash_v2_5",
       }),
       signal: AbortSignal.timeout(45_000),
     });
 
     if (!upstream.ok) {
+      const errorPayload = await upstream.json().catch(() => null);
+      const upstreamDetail =
+        typeof errorPayload?.detail === "string"
+          ? errorPayload.detail
+          : typeof errorPayload?.detail?.message === "string"
+            ? errorPayload.detail.message
+            : null;
       const message =
         upstream.status === 401 || upstream.status === 403
           ? "ElevenLabs rejected the API key. Check ELEVENLABS_API_KEY and try again."
           : upstream.status === 429
             ? "ElevenLabs is rate-limiting requests. Please wait and try again."
-            : `ElevenLabs could not generate audio (HTTP ${upstream.status}). Please try again.`;
+            : upstreamDetail
+              ? `ElevenLabs could not generate audio: ${upstreamDetail}`
+              : `ElevenLabs could not generate audio (HTTP ${upstream.status}). Please try again.`;
       return jsonError(message, 502);
     }
 
