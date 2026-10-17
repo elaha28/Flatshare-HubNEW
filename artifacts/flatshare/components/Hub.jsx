@@ -1,22 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bell, CheckSquare, FileText, Home, Loader2, Upload, Plus, CheckCircle } from "lucide-react";
+import { Bell, CheckSquare, FileText, Home, Loader2, Upload, Plus, CheckCircle, Users, ShieldCheck, Settings, Phone } from "lucide-react";
 import * as pdfjsLib from 'pdfjs-dist';
+import SettingsTab from "./SettingsTab";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
 
-const roommates = [
-  { name: "Sarah", initials: "SA" },
-  { name: "Amir", initials: "AM" },
-  { name: "Mei", initials: "ME" },
-  { name: "Jake", initials: "JA" },
+const initialRoommates = [
+  { id: 1, name: "Sarah", initials: "SA", role: "House Lead", vibe: "Always pays on time. Loves a tidy kitchen.", birthday: "12 May", avatar: "👩🏽‍💻", email: "sarah@ucl.ac.uk" },
+  { id: 2, name: "Amir", initials: "AM", role: "Tech Wizard", vibe: "Fixes the wifi. Forgets to take out the bins.", birthday: "3 Nov", avatar: "👨🏻‍💻", email: "amir@kcl.ac.uk" },
+  { id: 3, name: "Mei", initials: "ME", role: "Zen Master", vibe: "Keeps the plants alive. Master of the matcha.", birthday: "22 Aug", avatar: "👩🏻‍🎨", email: "mei@imperial.ac.uk" },
+  { id: 4, name: "Jake", initials: "JA", role: "Social Sec", vibe: "Hosts the best pre-drinks. Rarely does the dishes.", birthday: "9 Feb", avatar: "👨🏼‍🎤", email: "jake@lse.ac.uk" },
 ];
 
 const tabs = [
   { id: "bills", label: "Bills", Icon: Home },
   { id: "docs", label: "Docs", Icon: FileText },
   { id: "chores", label: "Chores", Icon: CheckSquare },
+  { id: "roommates", label: "Roommates", Icon: Users },
+  { id: "keyinfo", label: "Key Info", Icon: Phone }, // NEW TAB
+  { id: "settings", label: "Settings", Icon: Settings },
 ];
 
 async function getApiError(response, fallback) {
@@ -45,6 +49,21 @@ async function getApiError(response, fallback) {
 export default function Hub() {
   const [activeTab, setActiveTab] = useState("bills");
   
+  // --- ACCESSIBILITY SETTINGS STATE ---
+  const [darkMode, setDarkMode] = useState(false);
+  const [dyslexicFont, setDyslexicFont] = useState(false);
+
+  useEffect(() => {
+    if (darkMode) document.body.classList.add("dark-mode");
+    else document.body.classList.remove("dark-mode");
+    
+    if (dyslexicFont) document.body.classList.add("dyslexic-font");
+    else document.body.classList.remove("dyslexic-font");
+  }, [darkMode, dyslexicFont]);
+
+  // --- ROOMMATES STATE ---
+  const [roommates, setRoommates] = useState(initialRoommates);
+
   // --- BILLS STATE ---
   const [bills, setBills] = useState([
     { id: 1, name: "Electricity - October", amount: 120, payer: "Sarah", split: 4, settled: false, due: "Pending" },
@@ -338,7 +357,7 @@ export default function Hub() {
           <div className="sidebar-roommate-list">
             {roommates.map((person) => (
               <div className="sidebar-roommate" key={person.name}>
-                <span className="sidebar-avatar" aria-hidden="true">{person.initials}</span>
+                <span className="sidebar-avatar" aria-hidden="true">{person.avatar}</span>
                 <span className="sidebar-roommate-name">{person.name}</span>
                 <button type="button" className="sidebar-knudge" onClick={() => remind(person.name)} aria-label={`Send reminder email to ${person.name}`} title={`Knudge ${person.name}`}>
                   <Bell aria-hidden="true" />
@@ -357,7 +376,7 @@ export default function Hub() {
         <header className="topbar">
           <div className="top-house">Cedar House <span aria-hidden="true">/</span> Home overview</div>
           <span className="month-pill">October 2026</span>
-          <div className="profile"><span className="profile-avatar" aria-hidden="true">SA</span> Sarah</div>
+          <div className="profile"><span className="profile-avatar" aria-hidden="true">{roommates[0].avatar}</span> Sarah</div>
         </header>
 
         <div className="page-content">
@@ -448,7 +467,6 @@ export default function Hub() {
                       </div>
                       <div className="bill-paid"><div className="detail-label">Paid by</div><div className="detail-value">{bill.payer}</div></div>
                       
-                      {/* NEW: Show YOUR SHARE as the big number, and TOTAL as small text */}
                       <div className="bill-amount">
                         <div className="detail-label">Your share</div>
                         <div className="detail-value" style={{ color: "#163300", fontSize: "18px", fontWeight: "bold" }}>
@@ -522,8 +540,131 @@ export default function Hub() {
                 <div className="footer-note" style={{ marginTop: "15px" }}><span className="footer-mark" /> A fair turn makes a happy home.</div>
               </div>
             )}
+                       {activeTab === "keyinfo" && (
+              <div className="hub-body" id="panel-keyinfo" role="tabpanel">
+                <div className="section-top">
+                  <div><h3>Key Contacts</h3><p>Save the panic. All the important numbers in one place.</p></div>
+                  <span className="count-label">Private to your home</span>
+                </div>
+                
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px", marginTop: "20px" }}>
+                  
+                  {/* LANDLORD CARD */}
+                  <div style={{ border: "1px solid #deead8", borderRadius: "12px", padding: "20px", background: "#ffffff" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "15px" }}>
+                      <div style={{ width: "50px", height: "50px", borderRadius: "50%", background: "#e0f2fe", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
+                        🏠
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: "bold", fontSize: "18px" }}>Landlord</div>
+                        <div style={{ fontSize: "13px", color: "#666" }}>Cedar Properties Ltd</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "14px", color: "#333" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ color: "#888", fontWeight: "bold" }}>📞</span> <a href="tel:+442079460958" style={{ color: "#163300", textDecoration: "none", fontWeight: "500" }}>+44 (0)20 7946 0958</a>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ color: "#888", fontWeight: "bold" }}>✉️</span> <a href="mailto:landlord@cedarproperties.com" style={{ color: "#163300", textDecoration: "none", fontWeight: "500" }}>landlord@cedarproperties.com</a>
+                      </div>
+                    </div>
+                  </div>
 
-            {activeTab === "docs" && (
+                  {/* MAINTENANCE CARD */}
+                  <div style={{ border: "1px solid #deead8", borderRadius: "12px", padding: "20px", background: "#ffffff" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "15px" }}>
+                      <div style={{ width: "50px", height: "50px", borderRadius: "50%", background: "#fef3c7", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
+                        🔧
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: "bold", fontSize: "18px" }}>Emergency Maintenance</div>
+                        <div style={{ fontSize: "13px", color: "#666" }}>Available 24/7</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "14px", color: "#333" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ color: "#888", fontWeight: "bold" }}>📞</span> <a href="tel:+448001234567" style={{ color: "#163300", textDecoration: "none", fontWeight: "500" }}>0800 123 4567</a>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ color: "#888", fontWeight: "bold" }}>✉️</span> <a href="mailto:help@fixitfast.co.uk" style={{ color: "#163300", textDecoration: "none", fontWeight: "500" }}>help@fixitfast.co.uk</a>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* INTERNET CARD */}
+                  <div style={{ border: "1px solid #deead8", borderRadius: "12px", padding: "20px", background: "#ffffff" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "15px" }}>
+                      <div style={{ width: "50px", height: "50px", borderRadius: "50%", background: "#e0e7ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px" }}>
+                        🌐
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: "bold", fontSize: "18px" }}>Wifi & Broadband</div>
+                        <div style={{ fontSize: "13px", color: "#666" }}>Hyperoptic Support</div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "14px", color: "#333" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ color: "#888", fontWeight: "bold" }}>📞</span> <a href="tel:+443333000111" style={{ color: "#163300", textDecoration: "none", fontWeight: "500" }}>0333 300 0111</a>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <span style={{ color: "#888", fontWeight: "bold" }}>🔑</span> <span style={{ color: "#666" }}>Router: <strong>CedarHouse-5G</strong></span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            )}
+            
+            {activeTab === "roommates" && (
+              <div className="hub-body" id="panel-roommates" role="tabpanel">
+                <div className="section-top">
+                  <div><h3>The Pact Community</h3><p>Your verified, trusted housemates.</p></div>
+                  <span className="count-label" style={{ display: "flex", alignItems: "center", gap: "5px", color: "#163300" }}>
+                    <ShieldCheck size={16} color="#9FE870" /> All Verified
+                  </span>
+                </div>
+                
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px", marginTop: "20px" }}>
+                  {roommates.map(person => (
+                    <div key={person.name} style={{ border: "1px solid #deead8", borderRadius: "12px", padding: "20px", background: "#ffffff" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "15px" }}>
+                        <div style={{ width: "50px", height: "50px", borderRadius: "50%", background: "#9FE870", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", fontWeight: "bold", color: "#163300" }}>
+                          {person.avatar}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: "bold", fontSize: "18px", display: "flex", alignItems: "center", gap: "5px" }}>
+                            {person.name} <ShieldCheck size={16} color="#16a34a" />
+                          </div>
+                          <div style={{ fontSize: "13px", color: "#666", fontWeight: "500" }}>{person.role}</div>
+                          <div style={{ fontSize: "11px", color: "#999", marginTop: "2px" }}>{person.email}</div>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: "14px", color: "#555", fontStyle: "italic", marginBottom: "15px" }}>
+                        "{person.vibe}"
+                      </p>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #eee", paddingTop: "15px" }}>
+                        <span style={{ fontSize: "12px", color: "#888", fontWeight: "bold" }}>🎂 {person.birthday}</span>
+                        <button onClick={() => remind(person.name)} style={{ padding: "6px 10px", borderRadius: "6px", border: "none", background: "#f0fdf4", color: "#16a34a", fontWeight: "bold", cursor: "pointer", fontSize: "12px" }}>
+                          Send Nudge
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "settings" && (
+              <SettingsTab 
+                darkMode={darkMode} 
+                setDarkMode={setDarkMode} 
+                dyslexicFont={dyslexicFont} 
+                setDyslexicFont={setDyslexicFont} 
+              />
+            )}
+
+                        {activeTab === "docs" && (
               <div className="hub-body" id="panel-docs" role="tabpanel">
                 <div className="section-top">
                   <div><h3>Make sense of a document</h3><p>Understand the essentials, in the language that feels like home.</p></div>

@@ -1,4 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+@import url('https://fonts.cdnfonts.com/css/open-dyslexic');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -257,4 +259,72 @@ button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-
   .docs-controls { grid-template-columns:1fr; }
   .docs-controls > div:last-child { display:grid; grid-template-columns:1fr; }
   .result-columns { grid-template-columns:1fr; gap:13px; }
+}
+
+/* --- DARK MODE SPECIFIC FIXES --- */
+
+/* 1. Make the main backgrounds dark */
+body.dark-mode { background-color: #121212 !important; }
+body.dark-mode .app-shell { background-color: #121212; }
+body.dark-mode .main-area { background-color: #121212; }
+
+/* 2. Make the Hub Cards and Sidebar dark */
+body.dark-mode .hub-card, 
+body.dark-mode .sidebar { 
+  background-color: #1e1e1e !important; 
+  border-color: #333 !important; 
+}
+
+/* 3. Make standard text white (only on the dark backgrounds) */
+body.dark-mode .hub-title, 
+body.dark-mode .summary-value,
+body.dark-mode .brand-word,
+body.dark-mode .hub-tab:not(.selected),
+body.dark-mode .nav-tab:not(.active) {
+  color: #ffffff !important;
+}
+
+/* 4. Keep the light-colored cards light, and their text dark! */
+body.dark-mode .summary-card,
+body.dark-mode .bill-row,
+body.dark-mode .chore-row,
+body.dark-mode .hub-body > div > div[style*="background: #ffffff"] {
+  background-color: #ffffff !important; /* Force them to stay white */
+  color: #163300 !important; /* Force text to stay dark */
+}
+
+/* 5. Ensure text inside those light cards is dark */
+body.dark-mode .bill-name,
+body.dark-mode .chore-copy,
+body.dark-mode .detail-value,
+body.dark-mode .summary-label,
+body.dark-mode .summary-note,
+body.dark-mode .summary-value {
+  color: #163300 !important;
+}
+
+/* 6. Form inputs in dark mode */
+body.dark-mode input,
+body.dark-mode textarea,
+body.dark-mode select {
+  background-color: #2a2a2a !important;
+  color: white !important;
+  border-color: #444 !important;
+}
+
+/* 7. Fix the Roommate cards to be dark in dark mode */
+body.dark-mode .hub-body > div[style*="gridTemplateColumns"] > div {
+  background-color: #1e1e1e !important;
+  border-color: #333 !important;
+}
+body.dark-mode .hub-body > div[style*="gridTemplateColumns"] > div * {
+  color: #f3f4f6 !important; /* Force roommate text to be light */
+}
+/* --- DYSLEXIC FONT OVERRIDE --- */
+body.dyslexic-font, 
+body.dyslexic-font *, 
+body.dark-mode.dyslexic-font, 
+body.dark-mode.dyslexic-font * {
+  font-family: 'Open-Dyslexic', 'OpenDyslexic', sans-serif !important;
+  letter-spacing: 0.05em !important;
 }
