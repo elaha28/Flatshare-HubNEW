@@ -1,0 +1,2 @@
+- [Next.js routing behind the preview proxy](nextjs-preview-routing.md) — reserve only the shared API health path so Next `/api/*` routes reach the app; explicitly route `/_next/hmr`.
+- [Gemini model freshness](gemini-model-freshness.md) — verify Flash model IDs against current Google deprecation docs; use low thinking for latency-sensitive summaries.

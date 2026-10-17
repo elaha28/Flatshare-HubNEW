@@ -1,0 +1,32 @@
+kind = "web"
+previewPath = "/"
+title = "Flatshare"
+description = "A shared-home fintech app for managing bills, household chores and important documents, with document translation and audio playback."
+version = "1.0.0"
+id = "artifacts/flatshare"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/", "/_next", "/_next/hmr" ]
+localPort = 22687
+
+[services.development]
+run = "pnpm --filter @workspace/flatshare run dev"
+
+[services.production.build]
+args = [ "pnpm", "--filter", "@workspace/flatshare", "run", "build" ]
+
+[services.production.build.env]
+NODE_ENV = "production"
+
+[services.production.run]
+args = [ "pnpm", "--filter", "@workspace/flatshare", "run", "start" ]
+
+[services.production.run.env]
+PORT = "22687"
+NODE_ENV = "production"
+
+[services.env]
+PORT = "22687"
+BASE_PATH = "/"
