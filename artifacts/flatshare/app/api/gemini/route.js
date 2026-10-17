@@ -21,20 +21,20 @@ export async function POST(request) {
     return jsonError("Request body must be valid JSON.", 400);
   }
 
-  const { text, language } = body ?? {};
+  const { documentText, targetLanguage } = body ?? {};
 
-  if (typeof text !== "string" || !text.trim()) {
+  if (typeof documentText !== "string" || !documentText.trim()) {
     return jsonError("Add document text before analyzing it.", 400);
   }
 
-  if (text.length > MAX_TEXT_LENGTH) {
+  if (documentText.length > MAX_TEXT_LENGTH) {
     return jsonError(
       `Document text must be ${MAX_TEXT_LENGTH.toLocaleString()} characters or fewer.`,
       413,
     );
   }
 
-  if (typeof language !== "string" || !SUPPORTED_LANGUAGES.has(language)) {
+  if (typeof targetLanguage !== "string" || !SUPPORTED_LANGUAGES.has(targetLanguage)) {
     return jsonError("Choose a supported translation language.", 400);
   }
 
@@ -43,15 +43,7 @@ export async function POST(request) {
     return jsonError("GEMINI_API_KEY is not configured on the server.", 503);
   }
 
-  const prompt = [
-    "You help housemates understand shared-home documents.",
-    "Summarize the document in plain, concise English, preserving important dates, amounts, obligations, and actions.",
-    `Translate the full document into ${language}.`,
-    "Return only a JSON object with exactly two string properties: summary and translation.",
-    "",
-    "Document:",
-    text.trim(),
-  ].join("\n");
+  const prompt = `You are a helpful assistant for university students. Read the following document. 1. Provide a plain English summary of the key points. 2. Translate that summary into ${targetLanguage}. Format your response as a valid JSON object with exactly two keys: 'summary' and 'translation'. Do not wrap it in markdown blockquotes.\n\n${documentText.trim()}`;
 
   try {
     const upstream = await fetch(

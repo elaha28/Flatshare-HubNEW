@@ -57,8 +57,9 @@ export default function Hub() {
   ]);
   const [documentText, setDocumentText] = useState("");
   const [language, setLanguage] = useState("Spanish");
-  const [analysis, setAnalysis] = useState(null);
-  const [analyzeLoading, setAnalyzeLoading] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [translation, setTranslation] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [analyzeError, setAnalyzeError] = useState("");
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioError, setAudioError] = useState("");
@@ -86,40 +87,49 @@ export default function Hub() {
 
   async function analyzeDocument() {
     const text = documentText.trim();
-    if (!text || analyzeLoading) return;
+    if (!text || isLoading) return;
     analysisRequest.current?.abort();
     const controller = new AbortController();
     analysisRequest.current = controller;
-    setAnalyzeLoading(true);
+    setIsLoading(true);
     setAnalyzeError("");
     setAudioError("");
-    setAnalysis(null);
+    setSummary("");
+    setTranslation("");
     try {
       const response = await fetch("/api/gemini", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, language }),
+        body: JSON.stringify({ documentText: text, targetLanguage: language }),
         signal: controller.signal,
       });
       if (!response.ok) {
         throw new Error(await getApiError(response, `Analysis failed (${response.status}). Please try again.`));
       }
       const payload = await response.json();
-      const summary = payload.summary ?? payload.data?.summary;
-      const translation = payload.translation ?? payload.translatedText ?? payload.data?.translation ?? payload.data?.translatedText;
-      if (typeof summary !== "string" || typeof translation !== "string") {
+      if (
+        typeof payload.summary !== "string" ||
+        typeof payload.translation !== "string" ||
+        !payload.summary.trim() ||
+        !payload.translation.trim()
+      ) {
         throw new Error("We couldn't read the analysis response. Please try again.");
       }
-      setAnalysis({ summary, translation });
+      setSummary(payload.summary.trim());
+      setTranslation(payload.translation.trim());
     } catch (error) {
-      if (error.name !== "AbortError") setAnalyzeError(error.message || "Something went wrong. Please try again.");
+      if (error.name !== "AbortError") {
+        const message = error.message || "Something went wrong. Please try again.";
+        setAnalyzeError(message);
+        alert(message);
+      }
     } finally {
-      if (analysisRequest.current === controller) setAnalyzeLoading(false);
+      if (analysisRequest.current === controller) setIsLoading(false);
     }
   }
 
   async function listenToTranslation() {
-    if (!analysis?.translation || audioLoading) return;
+    if (!translation || audioLoading) return;
     audioRequest.current?.abort();
     const controller = new AbortController();
     audioRequest.current = controller;
@@ -133,7 +143,7 @@ export default function Hub() {
       const response = await fetch("/api/elevenlabs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: analysis.translation }),
+        body: JSON.stringify({ text: translation }),
         signal: controller.signal,
       });
       if (!response.ok) {
@@ -304,23 +314,23 @@ export default function Hub() {
                       </select>
                     </div>
                     <div>
-                      <button className="primary-action" type="submit" disabled={!documentText.trim() || analyzeLoading}>
-                        {analyzeLoading ? <Loader2 aria-hidden="true" /> : <Upload aria-hidden="true" />}
-                        {analyzeLoading ? "Analyzing document…" : "Analyze Document"}
+                  <button className="primary-action" type="submit" disabled={!documentText.trim() || isLoading}>
+                        {isLoading ? <Loader2 aria-hidden="true" /> : <Upload aria-hidden="true" />}
+                        {isLoading ? "Analyzing…" : "Analyze"}
                       </button>
                     </div>
                   </div>
                 </form>
-                {analyzeLoading && <div className="loading-line" role="status"><Loader2 aria-hidden="true" /> Reading your document and preparing a clear translation…</div>}
-                {analyzeError && <div className="error-box" role="alert"><span>{analyzeError}</span><button type="button" className="retry-button" onClick={analyzeDocument} disabled={!documentText.trim() || analyzeLoading}>Try again</button></div>}
-                {analysis && (
+                {isLoading && <div className="loading-line" role="status"><Loader2 aria-hidden="true" /> Reading your document and preparing a clear translation…</div>}
+                {analyzeError && <div className="error-box" role="alert"><span>{analyzeError}</span><button type="button" className="retry-button" onClick={analyzeDocument} disabled={!documentText.trim() || isLoading}>Try again</button></div>}
+                {summary && translation && (
                   <div className="result-card" aria-live="polite">
                     <div className="result-header"><FileText aria-hidden="true" /> Your document, made clearer</div>
                     <div className="result-columns">
-                      <div><div className="result-label">Plain-English summary</div><div className="result-text">{analysis.summary}</div></div>
-                      <div><div className="result-label">{language} translation</div><div className="result-text">{analysis.translation}</div></div>
+                      <div><div className="result-label">Plain-English summary</div><div className="result-text">{summary}</div></div>
+                      <div><div className="result-label">{language} translation</div><div className="result-text">{translation}</div></div>
                     </div>
-                    <button type="button" className="listen-button" onClick={listenToTranslation} disabled={audioLoading || !analysis.translation}>
+                    <button type="button" className="listen-button" onClick={listenToTranslation} disabled={audioLoading || !translation}>
                       {audioLoading ? <Loader2 aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
                       {audioLoading ? "Preparing audio…" : "Listen to Translation"}
                     </button>
