@@ -89,6 +89,7 @@ export default function Hub() {
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioError, setAudioError] = useState("");
   const [audioUrl, setAudioUrl] = useState("");
+  const [nudgeState, setNudgeState] = useState({ name: "", status: "", message: "" });
   const audioRef = useRef(null);
   const analysisRequest = useRef(null);
   const audioRequest = useRef(null);
@@ -116,8 +117,20 @@ export default function Hub() {
     audioRequest.current?.abort();
   }, []);
 
-  function remind(name) {
-    alert(`Reminder email sent to ${name}!`);
+  async function remind(name) {
+    if (nudgeState.status === "sending") return;
+    setNudgeState({ name, status: "sending", message: "Sending Knudge…" });
+    try {
+      const response = await fetch("/api/nudge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!response.ok) throw new Error(await getApiError(response, "Could not send the Knudge. Please try again."));
+      setNudgeState({ name, status: "sent", message: `Knudge email sent to ${name}.` });
+    } catch (error) {
+      setNudgeState({ name, status: "error", message: error.message || "Could not send the Knudge. Please try again." });
+    }
   }
 
   function addBill(e) {
@@ -342,19 +355,20 @@ export default function Hub() {
         <section className="sidebar-roommates" aria-label="Housemates">
           <div className="sidebar-roommates-heading">
             <span className="home-label">Housemates</span>
-            <span className="sidebar-nudge-label">Knudge</span>
+            <span className="sidebar-nudge-label">Knudges</span>
           </div>
           <div className="sidebar-roommate-list">
             {roommates.map((person) => (
               <div className="sidebar-roommate" key={person.name}>
                 <span className="sidebar-avatar" aria-hidden="true">{person.avatar}</span>
                 <span className="sidebar-roommate-name">{person.name}</span>
-                <button type="button" className="sidebar-knudge" onClick={() => remind(person.name)} aria-label={`Send reminder email to ${person.name}`} title={`Knudge ${person.name}`}>
+                <button type="button" className="sidebar-knudge" onClick={() => remind(person.name)} disabled={nudgeState.status === "sending"} aria-label={nudgeState.status === "sending" && nudgeState.name === person.name ? `Sending Knudge email to ${person.name}` : `Send a Knudge to ${person.name}`} title={`Knudge ${person.name}`}>
                   <Bell aria-hidden="true" />
                 </button>
               </div>
             ))}
           </div>
+          {nudgeState.message && <p className={`sidebar-nudge-status ${nudgeState.status}`} role="status" aria-live="polite">{nudgeState.message}</p>}
         </section>
         <div className="side-bottom">
           <div className="house-status"><span className="status-dot" /> Cedar House</div>
