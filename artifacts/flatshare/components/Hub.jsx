@@ -19,7 +19,7 @@ const tabs = [
   { id: "docs", label: "Docs", Icon: FileText },
   { id: "chores", label: "Chores", Icon: CheckSquare },
   { id: "roommates", label: "Roommates", Icon: Users },
-  { id: "keyinfo", label: "Key Info", Icon: Phone }, // NEW TAB
+  { id: "keyinfo", label: "Key Info", Icon: Phone },
   { id: "settings", label: "Settings", Icon: Settings },
 ];
 
@@ -49,7 +49,6 @@ async function getApiError(response, fallback) {
 export default function Hub() {
   const [activeTab, setActiveTab] = useState("bills");
   
-  // --- ACCESSIBILITY SETTINGS STATE ---
   const [darkMode, setDarkMode] = useState(false);
   const [dyslexicFont, setDyslexicFont] = useState(false);
 
@@ -61,10 +60,8 @@ export default function Hub() {
     else document.body.classList.remove("dyslexic-font");
   }, [darkMode, dyslexicFont]);
 
-  // --- ROOMMATES STATE ---
   const [roommates, setRoommates] = useState(initialRoommates);
 
-  // --- BILLS STATE ---
   const [bills, setBills] = useState([
     { id: 1, name: "Electricity - October", amount: 120, payer: "Sarah", split: 4, settled: false, due: "Pending" },
     { id: 2, name: "Wifi - October", amount: 36, payer: "Amir", split: 4, settled: false, due: "Pending" },
@@ -73,7 +70,6 @@ export default function Hub() {
   const [newBillAmount, setNewBillAmount] = useState("");
   const [newBillPayer, setNewBillPayer] = useState("Sarah");
 
-  // --- CHORES STATE ---
   const [chores, setChores] = useState([
     { id: "bins", name: "Take out bins", assignee: "Mei", due: "Today", done: false },
     { id: "bathroom", name: "Clean bathroom", assignee: "Jake", due: "Tomorrow", done: false },
@@ -83,7 +79,6 @@ export default function Hub() {
   const [newChoreAssignee, setNewChoreAssignee] = useState("Unassigned");
   const [newChoreDue, setNewChoreDue] = useState("");
 
-  // --- DOCS STATE ---
   const [documentText, setDocumentText] = useState("");
   const [fileName, setFileName] = useState("");
   const [language, setLanguage] = useState("Spanish");
@@ -98,7 +93,6 @@ export default function Hub() {
   const analysisRequest = useRef(null);
   const audioRequest = useRef(null);
 
-  // --- FX STATE ---
   const [fxCurrency, setFxCurrency] = useState("GBP"); 
   const exchangeRates = {
     GBP: { symbol: "£", rate: 1.00, name: "British Pounds" },
@@ -108,7 +102,6 @@ export default function Hub() {
     CNY: { symbol: "¥", rate: 9.20, name: "Chinese Yuan" },
   };
 
-  // --- DYNAMIC CALCULATIONS ---
   const unsettledBills = bills.filter(b => !b.settled);
   const totalUnsettled = unsettledBills.reduce((sum, bill) => sum + bill.amount, 0);
   const myShare = unsettledBills.reduce((sum, bill) => sum + (bill.amount / bill.split), 0).toFixed(2);
@@ -127,7 +120,6 @@ export default function Hub() {
     alert(`Reminder email sent to ${name}!`);
   }
 
-  // --- BILL FUNCTIONS ---
   function addBill(e) {
     e.preventDefault();
     if (!newBillName.trim() || !newBillAmount) return;
@@ -151,7 +143,6 @@ export default function Hub() {
     setBills(bills.map(b => b.id === id ? { ...b, settled: !b.settled } : b));
   }
 
-  // --- CHORE FUNCTIONS ---
   function toggleChore(id) {
     setChores((current) => current.map((chore) => chore.id === id ? { ...chore, done: !chore.done } : chore));
   }
@@ -172,7 +163,6 @@ export default function Hub() {
     setNewChoreDue("");
   }
 
-  // --- DOC FUNCTIONS ---
   async function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -385,26 +375,30 @@ export default function Hub() {
             <span className="billing-cycle"><span className="cycle-dot" /> Home is up to date</span>
           </div>
           
-          {/* HERO WISE FX BANNER */}
-          <section style={{ marginBottom: "20px" }}>
-            <article style={{ background: "#163300", color: "white", padding: "24px", borderRadius: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "20px" }}>
-              <div>
-                <div style={{ fontSize: "14px", fontWeight: "bold", color: "#9FE870", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "8px" }}>
-                  Wise International Share
-                </div>
-                <div style={{ fontSize: "42px", fontWeight: "800", lineHeight: "1" }}>
-                  {exchangeRates[fxCurrency].symbol}{(myShare * exchangeRates[fxCurrency].rate).toFixed(2)}
-                </div>
-                <div style={{ fontSize: "14px", color: "#9ca3af", marginTop: "8px" }}>
-                  Your share of £{myShare} GBP converted at zero-fee rates.
-                </div>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <label style={{ fontSize: "12px", color: "#9FE870", fontWeight: "bold" }}>SELECT CURRENCY</label>
-                <select 
+          {/* UNIFIED SUMMARY CARDS */}
+          <section className="summary-grid" aria-label="Home at a glance">
+            
+            <article className="summary-card primary" style={{ position: "relative" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px" }}>
+                <div className="summary-label" style={{ marginBottom: 0 }}>Your share this month</div>
+                                <select 
                   value={fxCurrency} 
                   onChange={(e) => setFxCurrency(e.target.value)}
-                  style={{ padding: "12px", borderRadius: "8px", border: "none", fontSize: "16px", fontWeight: "bold", cursor: "pointer", background: "white", color: "#163300", outline: "none" }}
+                  onClick={(e) => e.stopPropagation()} 
+                  style={{ 
+                    padding: "2px 4px", 
+                    borderRadius: "4px", 
+                    border: "none", 
+                    fontSize: "11px", 
+                    fontWeight: "bold", 
+                    cursor: "pointer", 
+                    background: "#9FE870", 
+                    color: "#163300", 
+                    outline: "none",
+                    position: "relative",
+                    zIndex: 50,
+                    pointerEvents: "auto"
+                  }}
                 >
                   <option value="GBP">GBP (£)</option>
                   <option value="EUR">EUR (€)</option>
@@ -413,26 +407,26 @@ export default function Hub() {
                   <option value="CNY">CNY (¥)</option>
                 </select>
               </div>
+              <div className="summary-value">
+                {exchangeRates[fxCurrency].symbol}{(myShare * exchangeRates[fxCurrency].rate).toFixed(2)}
+              </div>
+              <div className="summary-note">
+                Across {unsettledBills.length} unsettled bills
+              </div>
             </article>
-          </section>
 
-          {/* ORIGINAL SUMMARY CARDS */}
-          <section className="summary-grid" aria-label="Home at a glance">
-            <article className="summary-card primary">
-              <div className="summary-label">Your share this month</div>
-              <div className="summary-value">£{myShare}</div>
-              <div className="summary-note">Across {unsettledBills.length} unsettled bills</div>
-            </article>
             <article className="summary-card">
               <div className="summary-label">House bills</div>
-              <div className="summary-value">£{totalUnsettled.toFixed(2)}</div>
+              <div className="summary-value">{exchangeRates[fxCurrency].symbol}{(totalUnsettled * exchangeRates[fxCurrency].rate).toFixed(2)}</div>
               <div className="summary-note"><span className="positive">{unsettledBills.length} bills</span> outstanding</div>
             </article>
+
             <article className="summary-card">
               <div className="summary-label">Chores done</div>
               <div className="summary-value">{completedChores} <span style={{ fontSize: 15, color: "#89948c", fontWeight: 600 }}>/ {chores.length}</span></div>
               <div className="summary-note">A good start to the week</div>
             </article>
+
           </section>
 
           <section className="hub-card" aria-label="Shared home hub">
@@ -470,12 +464,12 @@ export default function Hub() {
                       <div className="bill-amount">
                         <div className="detail-label">Your share</div>
                         <div className="detail-value" style={{ color: "#163300", fontSize: "18px", fontWeight: "bold" }}>
-                          £{(bill.amount / bill.split).toFixed(2)}
+                          {exchangeRates[fxCurrency].symbol}{((bill.amount / bill.split) * exchangeRates[fxCurrency].rate).toFixed(2)}
                         </div>
                       </div>
                       
                       <div className="bill-total" style={{ display: "flex", alignItems: "center", gap: "10px", flexDirection: "column", alignItems: "flex-end" }}>
-                        <span style={{ fontSize: "12px", color: "#89948c" }}>£{bill.amount.toFixed(2)} total</span>
+                        <span style={{ fontSize: "12px", color: "#89948c" }}>{exchangeRates[fxCurrency].symbol}{(bill.amount * exchangeRates[fxCurrency].rate).toFixed(2)} total</span>
                         <div style={{ display: "flex", gap: "10px", marginTop: "5px" }}>
                           <button 
                             onClick={() => toggleBillSettled(bill.id)}
@@ -499,7 +493,7 @@ export default function Hub() {
 
                 <form onSubmit={addBill} style={{ marginTop: "20px", display: "flex", gap: "10px", flexWrap: "wrap", background: "#f9fbf8", padding: "15px", borderRadius: "12px", border: "1px solid #deead8" }}>
                   <input type="text" placeholder="Bill name (e.g. Water)" value={newBillName} onChange={(e) => setNewBillName(e.target.value)} style={{ flex: "1 1 200px", padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }} required />
-                  <input type="number" placeholder="Amount (£)" value={newBillAmount} onChange={(e) => setNewBillAmount(e.target.value)} style={{ flex: "1 1 100px", padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }} required />
+                  <input type="number" placeholder={`Amount (${exchangeRates[fxCurrency].symbol})`} value={newBillAmount} onChange={(e) => setNewBillAmount(e.target.value)} style={{ flex: "1 1 100px", padding: "10px", borderRadius: "8px", border: "1px solid #ccc" }} required />
                   <select value={newBillPayer} onChange={(e) => setNewBillPayer(e.target.value)} style={{ flex: "1 1 120px", padding: "10px", borderRadius: "8px", border: "1px solid #ccc", background: "white" }}>
                     {roommates.map((r) => <option key={r.name} value={r.name}>Paid by {r.name}</option>)}
                   </select>
@@ -540,7 +534,8 @@ export default function Hub() {
                 <div className="footer-note" style={{ marginTop: "15px" }}><span className="footer-mark" /> A fair turn makes a happy home.</div>
               </div>
             )}
-                       {activeTab === "keyinfo" && (
+
+            {activeTab === "keyinfo" && (
               <div className="hub-body" id="panel-keyinfo" role="tabpanel">
                 <div className="section-top">
                   <div><h3>Key Contacts</h3><p>Save the panic. All the important numbers in one place.</p></div>
@@ -615,7 +610,7 @@ export default function Hub() {
                 </div>
               </div>
             )}
-            
+
             {activeTab === "roommates" && (
               <div className="hub-body" id="panel-roommates" role="tabpanel">
                 <div className="section-top">
@@ -637,7 +632,7 @@ export default function Hub() {
                             {person.name} <ShieldCheck size={16} color="#16a34a" />
                           </div>
                           <div style={{ fontSize: "13px", color: "#666", fontWeight: "500" }}>{person.role}</div>
-                          <div style={{ fontSize: "11px", color: "#999", marginTop: "2px" }}>{person.email}</div>
+                                                    <div style={{ fontSize: "11px", color: "#999", marginTop: "2px" }}>{person.email}</div>
                         </div>
                       </div>
                       <p style={{ fontSize: "14px", color: "#555", fontStyle: "italic", marginBottom: "15px" }}>
@@ -664,7 +659,7 @@ export default function Hub() {
               />
             )}
 
-                        {activeTab === "docs" && (
+            {activeTab === "docs" && (
               <div className="hub-body" id="panel-docs" role="tabpanel">
                 <div className="section-top">
                   <div><h3>Make sense of a document</h3><p>Understand the essentials, in the language that feels like home.</p></div>
