@@ -342,7 +342,7 @@ export default function Hub() {
       <aside className="sidebar" aria-label="Household navigation and housemates">
         <div className="brand">
           <div className="brand-mark" aria-hidden="true"><Home size={18} strokeWidth={2.4} /></div>
-          <span className="brand-word">Pact</span>
+          <span className="brand-word">PACT</span>
         </div>
         <div className="home-label">Your home</div>
         <nav className="side-nav" aria-label="Shared home sections">
@@ -628,7 +628,7 @@ export default function Hub() {
             {activeTab === "roommates" && (
               <div className="hub-body" id="panel-roommates" role="tabpanel">
                 <div className="section-top">
-                  <div><h3>The Pact Community</h3><p>Your verified, trusted housemates.</p></div>
+                  <div><h3>The PACT Community</h3><p>Your verified, trusted housemates.</p></div>
                   <span className="count-label" style={{ display: "flex", alignItems: "center", gap: "5px", color: "#163300" }}>
                     <ShieldCheck size={16} color="#9FE870" /> All Verified
                   </span>

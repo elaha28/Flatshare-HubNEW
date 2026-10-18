@@ -7,7 +7,7 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "Pact | Max Ease",
+  title: "PACT | Max Ease",
   description:
     "Shared bills and house admin, without the awkward chats. Keep your flat running smoothly with Pact.",
 };
